@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { FileItem, FileType } from '../models/file.item.model';
-import { FILE_LIST } from '../data/file.storage';
+import { FileItem, FileOwner, FileType } from '../models/file.item.model';
+import { FILE_LIST, OWNERS } from '../data/file.storage';
 import { CommonModule } from '@angular/common';
 import { FileComponent } from '../file/file.component';
 
@@ -11,22 +11,44 @@ import { FileComponent } from '../file/file.component';
   imports: [RouterOutlet, CommonModule, FileComponent],
   templateUrl: './app.component.html',
 })
-export class AppComponent {
-  files: FileItem[] = FILE_LIST; 
-  selectedFilesIds: string[] = []; 
+export class AppComponent implements OnInit {
+  files: FileItem[] = FILE_LIST;
+  folders: FileItem[] = [];
+  allOwners: FileOwner[] = OWNERS;
+  selectedFilesIds: string[] = [];
   title = 'file-management';
   FileType = FileType;
+  showFileModal = false;
+
+  ngOnInit() {
+    this.loadFolders();
+    this.sortFiles();
+  }
+
+  loadFolders() {
+    this.folders = this.files.filter(file => file.type === FileType.FOLDER);
+  }
+
+  openFileModal() {
+    this.showFileModal = true;
+  }
+
+  closeFileModal() {
+    this.showFileModal = false;
+  }
 
   addFile(newFile: FileItem) {
     this.files.push(newFile);
     this.sortFiles();
+    this.closeFileModal();
   }
 
   sortFiles() {
     this.files.sort((a, b) => {
-      if (a.type === FileType.FOLDER && b.type === FileType.FILE) return -1;
-      if (a.type === FileType.FILE && b.type === FileType.FOLDER) return 1;
-      return a.name.localeCompare(b.name); 
+      if (a.type !== b.type) {
+        return a.type === FileType.FOLDER ? -1 : 1;
+      }
+      return a.name.localeCompare(b.name);
     });
   }
 
@@ -40,7 +62,7 @@ export class AppComponent {
       this.selectedFilesIds.splice(fileIndex, 1);
     } else {
       this.selectedFilesIds.push(file.id);
-    }
+    } 
   }
 
   deleteFiles() {
